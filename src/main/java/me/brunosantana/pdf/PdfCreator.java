@@ -1,6 +1,8 @@
 package me.brunosantana.pdf;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -12,6 +14,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 //https://www.baeldung.com/java-pdf-creation
 //https://pdfbox.apache.org/1.8/cookbook/documentcreation.html
 //https://stackoverflow.com/questions/14686013/pdfbox-wrap-text
+//https://stackoverflow.com/questions/21995744/create-mutli-page-document-dynamically-using-pdfbox
 
 class History{
 	private int id;
@@ -101,6 +104,7 @@ public class PdfCreator {
 		createPdf1();
 		createPdf2();
 		createPdf3();
+		createPdf4();
 	}
 
 	private static void createPdf1() throws IOException {
@@ -177,6 +181,69 @@ public class PdfCreator {
 		
 		document.save( "output/pdf3.pdf");
 		document.close();
+	}
+	
+	private static void createPdf4() throws IOException {
+		PDDocument document = new PDDocument();
+		PDPage page = new PDPage();
+		document.addPage( page );
+
+		PDFont fontBold = PDType1Font.TIMES_BOLD;
+		PDFont font = PDType1Font.TIMES_ROMAN;
+
+		PDPageContentStream contentStream = new PDPageContentStream(document, page);
+		
+		List<History> historyList = new ArrayList<>();
+		for(int i = 15200; i < 15401; i++) {
+			historyList.add(createNewHistory(i));
+		}
+
+		var horizontalPosition = 750;
+		
+		writeLine(contentStream, fontBold, horizontalPosition, "UNIQUE ID" + " | " + "CURRENT STATUS" + " | " + "DATE CREATION" + " | " + 
+				"FEATURE BLA BLA" + " | " + "TYPE BLA BLA" + " " + "ACTION" + " | " + "BLOCK TYPE" + " | ");
+		horizontalPosition -= 10;
+		writeLine(contentStream, fontBold, horizontalPosition, "CHANNEL" + " | " + "DATE UPDATE");
+		
+		var itemCounter = 0;
+		
+		for(History history : historyList) {
+			
+			itemCounter++;
+			
+			if(itemCounter % 36 == 0) {
+				contentStream.close();
+				page = new PDPage();
+				document.addPage( page );
+				contentStream = new PDPageContentStream(document, page);
+				horizontalPosition = 750;
+			}
+			
+			horizontalPosition -= 10;
+			writeLine(contentStream, font, horizontalPosition, history.getId() + " | " + history.getStatus() + " | " + history.getDateCreation() + " | " + 
+					history.getFeature() + " | " + history.getType() + " | " + history.getAction() + " | " + history.getBlockType() + " | ");
+			
+			horizontalPosition -= 10;
+			writeLine(contentStream, font, horizontalPosition, history.getChannel() + " | " + history.getDateUpdate());
+		}
+		
+		contentStream.close();
+		
+		document.save( "output/pdf4.pdf");
+		document.close();
+	}
+	
+	private static History createNewHistory(int id) {
+		return new History(id, "CREATED", "2021-05-13T12:53:53", "PRINCIPAL", "PLASTIC", 
+				"BLOQUEADO_E_BLABLABLA_E_BLABLABLA", "ALGO_AQUI", "HELPDESK", "2021-05-13T12:53:53");
+	}
+	
+	private static void writeLine(PDPageContentStream contentStream, PDFont font, int horizontalPosition, String text) throws IOException {
+		contentStream.beginText();
+		contentStream.setFont( font, 10 );
+		contentStream.newLineAtOffset(15, horizontalPosition);
+		contentStream.showText(text);
+		contentStream.endText();
 	}
 
 }
