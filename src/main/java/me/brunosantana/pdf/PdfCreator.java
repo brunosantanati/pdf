@@ -1,14 +1,26 @@
 package me.brunosantana.pdf;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 
 //Example based on these links:
 //https://www.baeldung.com/java-pdf-creation
@@ -100,11 +112,15 @@ class History{
 
 public class PdfCreator {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, DocumentException {
+		//Using PDFBox
 		createPdf1();
 		createPdf2();
 		createPdf3();
 		createPdf4();
+		//Using IText
+		createPdf5();
+		createPdf6();
 	}
 
 	private static void createPdf1() throws IOException {
@@ -244,6 +260,84 @@ public class PdfCreator {
 		contentStream.newLineAtOffset(15, horizontalPosition);
 		contentStream.showText(text);
 		contentStream.endText();
+	}
+	
+	private static void createPdf5() throws DocumentException, FileNotFoundException {		
+		Document document = new Document();
+		PdfWriter.getInstance(document, new FileOutputStream("output/iTextTable.pdf"));
+
+		document.open();
+
+		PdfPTable table = new PdfPTable(3);
+		addTableHeader(table);
+		addRows(table);
+
+		document.add(table);
+		document.close();
+	}
+	
+	private static void addTableHeader(PdfPTable table) {
+	    Stream.of("column header 1", "column header 2", "column header 3")
+	      .forEach(columnTitle -> {
+	        PdfPCell header = new PdfPCell();
+	        header.setBackgroundColor(BaseColor.LIGHT_GRAY);
+	        header.setBorderWidth(2);
+	        header.setPhrase(new Phrase(columnTitle));
+	        table.addCell(header);
+	    });
+	}
+	
+	private static void addRows(PdfPTable table) {
+	    table.addCell("row 1, col 1");
+	    table.addCell("row 1, col 2");
+	    table.addCell("row 1, col 3");
+	}
+	
+	private static void createPdf6() throws DocumentException, FileNotFoundException {
+		Document document = new Document();
+		document.setPageSize(PageSize.A4.rotate());
+		document.setMargins(2, 2, 25, 25);
+		PdfWriter.getInstance(document, new FileOutputStream("output/iTextTable2.pdf"));
+
+		document.open();
+
+		PdfPTable table = new PdfPTable(9);
+		table.setWidthPercentage(90);
+		addHeaders(table);
+		addItems(table);
+
+		document.add(table);
+		document.close();
+	}
+	
+	private static void addHeaders(PdfPTable table) {
+	    Stream.of("UNIQUE ID", "CURRENT STATUS", "DATE CREATION", "FEATURE BLA BLA", "TYPE BLA BLA", "ACTION", "BLOCK TYPE", "CHANNEL", "DATE UPDATE")
+	      .forEach(columnTitle -> {
+	        PdfPCell header = new PdfPCell();
+	        header.setBackgroundColor(BaseColor.LIGHT_GRAY);
+	        header.setBorderWidth(2);
+	        header.setPhrase(new Phrase(columnTitle));
+	        table.addCell(header);
+	    });
+	}
+	
+	private static void addItems(PdfPTable table) {
+		List<History> historyList = new ArrayList<>();
+		for(int i = 15200; i < 15401; i++) {
+			historyList.add(createNewHistory(i));
+		}
+		
+		for(History history : historyList) {
+			table.addCell(String.valueOf(history.getId()));
+			table.addCell(history.getStatus());
+			table.addCell(history.getDateCreation());
+			table.addCell(history.getFeature());
+			table.addCell(history.getType());
+			table.addCell(history.getAction());
+			table.addCell(history.getBlockType());
+			table.addCell(history.getChannel());
+			table.addCell(history.getDateUpdate());
+		}
 	}
 
 }
